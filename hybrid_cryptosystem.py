@@ -156,7 +156,7 @@ def symmetric_decrypt(key: bytes, cipher_text: bytes) -> bytes:
     decryptor = cipher.decryptor()
     text = decryptor.update(cipher_text) + decryptor.finalize()
     unpadder = symmetric_padding.ANSIX923(64).unpadder()
-    unpadded_text = unpadder.update(text) + unpadder.finalize()
+    unpadded_text = unpadder.update(text) + unpadder.finalize() 
     return unpadded_text
 
 
@@ -266,3 +266,29 @@ def create_and_save_keys(length: int, settings: dict) -> None:
         save_symmetric_key(ciphered_key, settings['symmetric_key'])
     else:
         raise ValueError 
+    
+def encryption_text(settings: dict) -> None:
+    """Reads the saves keys and encrypts the specified text, writing it to a new text file.
+    
+    Args: 
+        settings (dict): Dictionary with paths.
+    """
+    private_key = load_private_key(settings['secret_key'])
+    cipher_key = load_symmetric_key(settings['symmetric_key'])
+    symmetric_key = asymmetric_decrypt(private_key, cipher_key)
+    cipher_text = symmetric_encrypt(symmetric_key, read_text(settings['text_file']))
+    write_text(cipher_text, settings['encrypted_file'])
+      
+    
+def decryption_text(settings: dict)->None:
+    """Reads an encrypts text file and decrypts the text using keys, saving it to a new file.
+
+    Args: 
+        settings (dict): Dictionary with paths.
+    """
+    private_key = load_private_key(settings['secret_key'])
+    cipher_key = load_symmetric_key(settings['symmetric_key'])
+    symmetric_key = asymmetric_decrypt(private_key, cipher_key)
+    cipher_text = read_text(settings['encrypted_file'])
+    text = symmetric_decrypt(symmetric_key, cipher_text)
+    write_text(text, settings['decrypted_file'])
