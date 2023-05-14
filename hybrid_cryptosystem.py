@@ -2,6 +2,7 @@ import os
 import json
 import logging
 import argparse
+from cryptography.hazmat.primitives.asymmetric import rsa
 
 
 def load_settings(json_file: str) -> dict:
@@ -36,3 +37,17 @@ def generate_symmetric_key(length: int) -> bytes:
     """
     symmetric_key = os.urandom(length)
     return symmetric_key
+
+
+def generate_asymmetric_keys() -> tuple:
+        """Generates an asymmetric key for asymmetric encryption algorithm.
+
+        Returns:
+            tuple: Asymmetric keys.
+        """
+        keys = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+        private_key = keys
+        public_key = keys.public_key()
+        return private_key, public_key
+
+
