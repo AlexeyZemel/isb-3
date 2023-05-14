@@ -6,6 +6,7 @@ from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.asymmetric import padding as asymmetric_padding
 from cryptography.hazmat.primitives import padding as symmetric_padding
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from cryptography.hazmat.primitives.serialization import load_pem_public_key, load_pem_private_key
 
 
 def load_settings(json_file: str) -> dict:
@@ -65,11 +66,11 @@ def save_symmetric_key(key: bytes, file_name: str) -> None:
         raise err
     
     
-def save_private_key(private_key, file_name: str) -> None:
+def save_private_key(private_key: rsa._RSAPrivateKey, file_name: str) -> None:
     """Saves a private key to pem file.
 
     Args:
-        private_key: Private key for asymmetric encoding algorithm.
+        private_key (rsa._RSAPrivateKey): Private key for asymmetric encoding algorithm.
         file_name (str): Pem file for private key.
      """
     try:
@@ -79,11 +80,11 @@ def save_private_key(private_key, file_name: str) -> None:
         raise err
         
         
-def save_public_key(public_key, file_name:str)->None:
+def save_public_key(public_key: rsa._RSAPublicKey, file_name:str)->None:
     """Saves a public key to pem file.
 
     Args:
-        public_key: Public key for asymmetric encoding algorithm.
+        public_key (rsa._RSAPublicKey): Public key for asymmetric encoding algorithm.
         file_name (str): Pem file for public key.
     """
     try:
@@ -93,11 +94,11 @@ def save_public_key(public_key, file_name:str)->None:
         raise err
 
 
-def asymmetric_encrypt(public_key, text: bytes) -> bytes:
+def asymmetric_encrypt(public_key: rsa._RSAPublicKey, text: bytes) -> bytes:
     """Encrypts an input text using public key.
 
     Args:
-        public_key: Public key of asymmetric encryption algorithm.
+        public_key (rsa._RSAPublicKey): Public key of asymmetric encryption algorithm.
         text (bytes): Text for encryption.
 
     Returns:
@@ -107,11 +108,11 @@ def asymmetric_encrypt(public_key, text: bytes) -> bytes:
     return cipher_text
     
     
-def asymmetric_decrypt(private_key, cipher_text: bytes) -> bytes:
+def asymmetric_decrypt(private_key: rsa._RSAPrivateKey, cipher_text: bytes) -> bytes:
     """Decrypts an asymmetrical ciphertext using private key.
 
     Args:
-        private_key: Private key of asymmetric encryption algorithm.
+        private_key (rsa._RSAPrivateKey): Private key of asymmetric encryption algorithm.
         cipher_text (bytes): Encrypted text.
             
     Returns:
@@ -133,7 +134,7 @@ def symmetric_encrypt(key: bytes, text: bytes) -> bytes:
     """
     padder = symmetric_padding.ANSIX923(64).padder()
     padded_text = padder.update(bytes(text, "UTF-8")) + padder.finalize()
-    iv = os.urandom(16)
+    iv = os.urandom(8)
     cipher = Cipher(algorithms.CAST5(key), modes.CBC(iv))
     encryptor = cipher.encryptor()
     cipher_text = encryptor.update(padded_text) + encryptor.finalize()
@@ -141,7 +142,7 @@ def symmetric_encrypt(key: bytes, text: bytes) -> bytes:
 
 
 def symmetric_decrypt(key: bytes, cipher_text: bytes) -> bytes:
-    """The function decrypts a symmetrical ciphertext using symmetric key.
+    """Decrypts a symmetrical ciphertext using symmetric key.
 
     Args:
         key (bytes): Symmetric key of symmetric encryption algorithm.
@@ -154,7 +155,92 @@ def symmetric_decrypt(key: bytes, cipher_text: bytes) -> bytes:
     cipher = Cipher(algorithms.CAST5(key), modes.CBC(iv))
     decryptor = cipher.decryptor()
     text = decryptor.update(cipher_text) + decryptor.finalize()
-    unpadder = symmetric_padding.ANSIX923(32).unpadder()
+    unpadder = symmetric_padding.ANSIX923(64).unpadder()
     unpadded_text = unpadder.update(text) + unpadder.finalize()
     return unpadded_text
 
+
+def read_text(file_name: str) -> bytes:
+    """Reads text from txt file.
+
+    Args:
+        file_name (str): Name of txt file.
+
+    Returns:
+        bytes: Text in byte form.
+    """
+    try:
+        with open(file_name, mode='rb') as text_file:
+            text = text_file.read()
+    except OSError as err:
+        raise err
+    return text
+
+
+def write_text(text: bytes, file_name: str) -> None:
+    """Writes text to txt file.
+
+    Args:
+        text (bytes): Text for writing.
+        file_name (str): Name of txt file.
+    """
+    try:
+        with open(file_name, mode='wb') as text_file:
+            text_file.write(text)
+    except OSError as err:
+        raise err
+
+
+def load_symmetric_key(file_name: str) -> bytes:
+    """Loads a symmetric key from txt file.
+
+    Args:
+        file_name (str): Name of txt file.
+
+    Returns:
+        bytes: Symmetric key for symmetric encoding algorithm.
+    """
+    try:
+        with open(file_name, mode='rb') as key_file:
+            key = key_file.read()
+    except OSError as err:
+        raise err
+    return key
+
+
+def load_private_key(private_pem: str) -> rsa._RSAPrivateKey:
+    """Loads a private key from pem file.
+
+    Args:
+        private_pem (str): Name of pem file.
+
+    Returns:
+        rsa._RSAPrivateKey: Private key for asymmetric encoding algorithm.
+    """
+    private_key = None
+    try:
+        with open(private_pem, 'rb') as pem_in:
+            private_bytes = pem_in.read()
+        private_key = load_pem_private_key(private_bytes, password=None)
+    except OSError as err:
+        raise err
+    return private_key
+
+
+def load_public_key(public_pem: str) -> rsa._RSAPublicKey:
+    """Loads a public key from pem file.
+
+    Args:
+        public_pem (str): Name of pem file.
+
+    Returns:
+        rsa._RSAPublicKey: Public key for asymmetric encoding algorithm.
+    """
+    public_key = None
+    try:
+        with open(public_pem, 'rb') as pem_in:
+            public_bytes = pem_in.read()
+        public_key = load_pem_public_key(public_bytes)
+    except OSError as err:
+        raise err
+    return public_key
