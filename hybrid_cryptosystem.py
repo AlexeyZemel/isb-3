@@ -2,7 +2,8 @@ import os
 import json
 import argparse
 from cryptography.hazmat.primitives.asymmetric import rsa
-from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives import serialization, hashes
+from cryptography.hazmat.primitives.asymmetric import padding as asymmetric_padding
 
 
 def load_settings(json_file: str) -> dict:
@@ -88,3 +89,31 @@ def save_public_key(public_key, file_name:str)->None:
             public_out.write(public_key.public_bytes(encoding=serialization.Encoding.PEM, format=serialization.PublicFormat.SubjectPublicKeyInfo))
     except OSError as err:
         raise err
+
+
+def asymmetric_encrypt(public_key, text: bytes) -> bytes:
+    """Encrypts an input text using public key.
+
+    Args:
+        public_key: Public key of asymmetric encryption algorithm.
+        text (bytes): Text for encryption.
+
+    Returns:
+        bytes: Encrypted text.
+    """
+    cipher_text = public_key.encrypt(text, asymmetric_padding.OAEP(mgf=asymmetric_padding.MGF1(algorithm=hashes.SHA256()), algorithm=hashes.SHA256(), label=None))
+    return cipher_text
+    
+    
+def asymmetric_decrypt(private_key, cipher_text: bytes) -> bytes:
+    """Decrypts an asymmetrical ciphertext using private key.
+
+    Args:
+        private_key: Private key of asymmetric encryption algorithm.
+        cipher_text (bytes): Encrypted text.
+            
+    Returns:
+        bytes: Decrypted text.
+    """
+    text = private_key.decrypt(cipher_text, asymmetric_padding.OAEP(mgf=asymmetric_padding.MGF1(algorithm=hashes.SHA256()), algorithm=hashes.SHA256(), label=None))
+    return text
