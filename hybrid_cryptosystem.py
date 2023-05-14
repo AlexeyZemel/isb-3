@@ -66,11 +66,11 @@ def save_symmetric_key(key: bytes, file_name: str) -> None:
         raise err
     
     
-def save_private_key(private_key: rsa._RSAPrivateKey, file_name: str) -> None:
+def save_private_key(private_key, file_name: str) -> None:
     """Saves a private key to pem file.
 
     Args:
-        private_key (rsa._RSAPrivateKey): Private key for asymmetric encoding algorithm.
+        private_key: Private key for asymmetric encoding algorithm.
         file_name (str): Pem file for private key.
      """
     try:
@@ -80,11 +80,11 @@ def save_private_key(private_key: rsa._RSAPrivateKey, file_name: str) -> None:
         raise err
         
         
-def save_public_key(public_key: rsa._RSAPublicKey, file_name:str)->None:
+def save_public_key(public_key, file_name:str)->None:
     """Saves a public key to pem file.
 
     Args:
-        public_key (rsa._RSAPublicKey): Public key for asymmetric encoding algorithm.
+        public_key: Public key for asymmetric encoding algorithm.
         file_name (str): Pem file for public key.
     """
     try:
@@ -94,11 +94,11 @@ def save_public_key(public_key: rsa._RSAPublicKey, file_name:str)->None:
         raise err
 
 
-def asymmetric_encrypt(public_key: rsa._RSAPublicKey, text: bytes) -> bytes:
+def asymmetric_encrypt(public_key, text: bytes) -> bytes:
     """Encrypts an input text using public key.
 
     Args:
-        public_key (rsa._RSAPublicKey): Public key of asymmetric encryption algorithm.
+        public_key: Public key of asymmetric encryption algorithm.
         text (bytes): Text for encryption.
 
     Returns:
@@ -108,11 +108,11 @@ def asymmetric_encrypt(public_key: rsa._RSAPublicKey, text: bytes) -> bytes:
     return cipher_text
     
     
-def asymmetric_decrypt(private_key: rsa._RSAPrivateKey, cipher_text: bytes) -> bytes:
+def asymmetric_decrypt(private_key, cipher_text: bytes) -> bytes:
     """Decrypts an asymmetrical ciphertext using private key.
 
     Args:
-        private_key (rsa._RSAPrivateKey): Private key of asymmetric encryption algorithm.
+        private_key: Private key of asymmetric encryption algorithm.
         cipher_text (bytes): Encrypted text.
             
     Returns:
@@ -133,7 +133,7 @@ def symmetric_encrypt(key: bytes, text: bytes) -> bytes:
         bytes: Encrypted text.
     """
     padder = symmetric_padding.ANSIX923(64).padder()
-    padded_text = padder.update(bytes(text, "UTF-8")) + padder.finalize()
+    padded_text = padder.update(text) + padder.finalize()
     iv = os.urandom(8)
     cipher = Cipher(algorithms.CAST5(key), modes.CBC(iv))
     encryptor = cipher.encryptor()
@@ -208,14 +208,14 @@ def load_symmetric_key(file_name: str) -> bytes:
     return key
 
 
-def load_private_key(private_pem: str) -> rsa._RSAPrivateKey:
+def load_private_key(private_pem: str):
     """Loads a private key from pem file.
 
     Args:
         private_pem (str): Name of pem file.
 
     Returns:
-        rsa._RSAPrivateKey: Private key for asymmetric encoding algorithm.
+        Private key for asymmetric encoding algorithm.
     """
     private_key = None
     try:
@@ -227,14 +227,14 @@ def load_private_key(private_pem: str) -> rsa._RSAPrivateKey:
     return private_key
 
 
-def load_public_key(public_pem: str) -> rsa._RSAPublicKey:
+def load_public_key(public_pem: str):
     """Loads a public key from pem file.
 
     Args:
         public_pem (str): Name of pem file.
 
     Returns:
-        rsa._RSAPublicKey: Public key for asymmetric encoding algorithm.
+        Public key for asymmetric encoding algorithm.
     """
     public_key = None
     try:
@@ -252,9 +252,6 @@ def create_and_save_keys(length: int, settings: dict) -> None:
     Args:
         length (int): Symmetric key length.
         settings (dict): Dictionary with paths.
-
-    Raises:
-        ValueError: An exception is thrown if the length of the symmetric key specified by the user does not match the valid values.
     """
     if length > 39 and length < 129 and length % 8 == 0:
         length = int(length/8)
@@ -276,7 +273,8 @@ def encryption_text(settings: dict) -> None:
     private_key = load_private_key(settings['secret_key'])
     cipher_key = load_symmetric_key(settings['symmetric_key'])
     symmetric_key = asymmetric_decrypt(private_key, cipher_key)
-    cipher_text = symmetric_encrypt(symmetric_key, read_text(settings['text_file']))
+    text =  read_text(settings['initial_file'])
+    cipher_text = symmetric_encrypt(symmetric_key,text)
     write_text(cipher_text, settings['encrypted_file'])
       
     
@@ -292,3 +290,31 @@ def decryption_text(settings: dict)->None:
     cipher_text = read_text(settings['encrypted_file'])
     text = symmetric_decrypt(symmetric_key, cipher_text)
     write_text(text, settings['decrypted_file'])
+
+
+if __name__ == "__main__":
+    settings = load_settings("settings.json")
+    parser = argparse.ArgumentParser(description='Hybrid Cryptosystem')
+    parser.add_argument('-gen','--generation', help='Запускает режим генерации ключей')   
+    parser.add_argument('-enc','--encryption', help='Запускает режим шифрования')
+    parser.add_argument('-dec','--decryption', help='Запускает режим дешифрования')
+    args = parser.parse_args()
+    if args.generation:
+        try:
+            create_and_save_keys(args.generation, settings)
+        except ValueError:
+            print("Invalid key length")
+        print("Keys generation completed")
+    elif args.encryption:
+        try:
+            encryption_text(settings)
+        except BaseException:
+            print("Something is wrong with the encryption key")
+        print("Encryption completed")
+    else:
+        try:
+            decryption_text(settings)
+        except BaseException:
+            print("Something is wrong with the decryption key")
+        print("Decryption completed")
+        
