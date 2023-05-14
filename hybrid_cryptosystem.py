@@ -244,3 +244,25 @@ def load_public_key(public_pem: str) -> rsa._RSAPublicKey:
     except OSError as err:
         raise err
     return public_key
+
+def create_and_save_keys(length: int, settings: dict) -> None:
+    """Generates symmetric, public and private keys, 
+    stores them in the specified paths and decrypts the symmetric key using the public key.
+
+    Args:
+        length (int): Symmetric key length.
+        settings (dict): Dictionary with paths.
+
+    Raises:
+        ValueError: An exception is thrown if the length of the symmetric key specified by the user does not match the valid values.
+    """
+    if length > 39 and length < 129 and length % 8 == 0:
+        length = int(length/8)
+        symmetric_key = generate_symmetric_key(length)
+        private_key, public_key = generate_asymmetric_keys()
+        save_public_key(public_key, settings['public_key'])
+        save_private_key(private_key, settings['secret_key'])
+        ciphered_key = asymmetric_encrypt(public_key, symmetric_key)
+        save_symmetric_key(ciphered_key, settings['symmetric_key'])
+    else:
+        raise ValueError 
