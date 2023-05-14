@@ -1,13 +1,17 @@
+import os
 import json
 import logging
 import argparse
 
 
 def load_settings(json_file: str) -> dict:
-    """Loads a configuration file into the program
+    """Loads a settings file into the program.
 
     Args:
         json_file (str): The path to the json file with the settings.
+
+    Returns:
+        dict: dictionary with settings
     """
     settings = None
     try:
@@ -21,3 +25,14 @@ def load_settings(json_file: str) -> dict:
     return settings
 
 
+def generate_symmetric_key(length: int) -> bytes:
+    """Generates a symmetric key for symmetric encryption algorithm.
+
+    Args:
+        length (int): Key length in bytes.
+
+    Returns:
+        bytes: Symmetric key.
+    """
+    symmetric_key = os.urandom(length)
+    return symmetric_key
