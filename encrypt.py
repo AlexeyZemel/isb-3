@@ -1,5 +1,6 @@
 import os
 import load_write
+import logging
 from decrypt import asymmetric_decrypt
 from cryptography.hazmat.primitives.asymmetric import padding as asymmetric_padding
 from cryptography.hazmat.primitives import hashes
@@ -25,6 +26,8 @@ def asymmetric_encrypt(public_key, text: bytes) -> bytes:
             label=None,
         ),
     )
+    logging.info(
+        "The text using the public key has been encrypted")
     return cipher_text
 
 
@@ -44,6 +47,8 @@ def symmetric_encrypt(key: bytes, text: bytes) -> bytes:
     cipher = Cipher(algorithms.CAST5(key), modes.CBC(iv))
     encryptor = cipher.encryptor()
     cipher_text = encryptor.update(padded_text) + encryptor.finalize()
+    logging.info(
+        "The text using the symmetric key has been encrypted")
     return iv + cipher_text
 
 
@@ -59,3 +64,5 @@ def encryption_text(settings: dict) -> None:
     text = load_write.read_text(settings["initial_file"])
     cipher_text = symmetric_encrypt(symmetric_key, text)
     load_write.write_text(cipher_text, settings["encrypted_file"])
+    logging.info(
+        "The text using the keys has been encrypted")

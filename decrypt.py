@@ -1,4 +1,5 @@
 import load_write
+import logging
 from cryptography.hazmat.primitives.asymmetric import padding as asymmetric_padding
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives import padding as symmetric_padding
@@ -23,6 +24,8 @@ def asymmetric_decrypt(private_key, cipher_text: bytes) -> bytes:
             label=None,
         ),
     )
+    logging.info(
+        "The asymmetric encrypted text using the private key has been decrypted")
     return text
 
 
@@ -42,6 +45,8 @@ def symmetric_decrypt(key: bytes, cipher_text: bytes) -> bytes:
     text = decryptor.update(cipher_text) + decryptor.finalize()
     unpadder = symmetric_padding.ANSIX923(64).unpadder()
     unpadded_text = unpadder.update(text) + unpadder.finalize()
+    logging.info(
+        "The symmetrical ciphertext using the symmetric key has been decrypted")
     return unpadded_text
 
 
@@ -57,3 +62,4 @@ def decryption_text(settings: dict) -> None:
     cipher_text = load_write.read_text(settings["encrypted_file"])
     text = symmetric_decrypt(symmetric_key, cipher_text)
     load_write.write_text(text, settings["decrypted_file"])
+    logging.info("The text was decrypted and written to a file")

@@ -1,4 +1,5 @@
 import os
+import logging
 import load_write
 from encrypt import asymmetric_encrypt
 from cryptography.hazmat.primitives.asymmetric import rsa
@@ -14,6 +15,7 @@ def generate_symmetric_key(length: int) -> bytes:
         bytes: Symmetric key.
     """
     symmetric_key = os.urandom(length)
+    logging.info("Symmetric key generated")
     return symmetric_key
 
 
@@ -26,6 +28,7 @@ def generate_asymmetric_keys() -> tuple:
     keys = rsa.generate_private_key(public_exponent=65537, key_size=2048)
     private_key = keys
     public_key = keys.public_key()
+    logging.info("Asymmetric key generated")
     return private_key, public_key
 
 
@@ -45,5 +48,9 @@ def create_keys(length: int, settings: dict) -> None:
         load_write.save_private_key(private_key, settings['secret_key'])
         ciphered_key = asymmetric_encrypt(public_key, symmetric_key)
         load_write.save_symmetric_key(ciphered_key, settings['symmetric_key'])
+        logging.info(
+            "Symmetric and asymmetric keys generated and written to a file")
     else:
+        logging.info(
+            "Invalid key length: the key length should be from 40 to 128 in 8-bit increments")
         raise ValueError
